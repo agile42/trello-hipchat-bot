@@ -40,37 +40,39 @@ class Bot
         actions.each do |action|
           if last_timestamp < action.date
             board_link = "<a href='https://trello.com/board/#{action.data['board']['id']}'>#{action.data['board']['name']}</a>"
-            card_link = "#{board_link} : <a href='https://trello.com/card/#{action.data['board']['id']}/#{action.data['card']['idShort']}'>#{action.data['card']['name']}</a>"
+            card_link = "<a href='https://trello.com/card/#{action.data['board']['id']}/#{action.data['card']['idShort']}'>#{action.data['card']['name']}</a> in #{board_link}"
             message = case action.type.to_sym
             when :updateCard
               if action.data['listBefore']
-                "#{action.member_creator.full_name} moved #{card_link} from #{action.data['listBefore']['name']} to #{action.data['listAfter']['name']}"
+                "moved #{card_link} from <strong>#{action.data['listBefore']['name']}</strong> to <strong>#{action.data['listAfter']['name']}</strong>"
               elsif action.data['card']['closed'] && !action.data['old']['closed']
-                "#{action.member_creator.full_name} archived #{card_link}"
+                "archived #{card_link}"
               elsif !action.data['card']['closed'] && action.data['old']['closed']
-                "#{action.member_creator.full_name} has been put back #{card_link} to the board"
+                "has been put back #{card_link} to the board"
               elsif action.data['old']['name']
-                "#{action.member_creator.full_name} renamed \"#{action.data['old']['name']}\" to #{card_link}"
+                "renamed <strong>\"#{action.data['old']['name']}\"</strong> to #{card_link}"
+              else
+                ""
               end
 
             when :createCard
-              "#{action.member_creator.full_name} added #{card_link} to #{action.data['list']['name']}"
+              "added #{card_link} to <strong>#{action.data['list']['name']}</strong>"
 
             when :moveCardToBoard
-              "#{action.member_creator.full_name} moved #{card_link} from the #{action.data['boardSource']['name']} board to #{action.data['board']['name']}"
+              "moved #{card_link} from the <strong>#{action.data['boardSource']['name']}</strong> board to <strong>#{action.data['board']['name']}</strong>"
 
             when :updateCheckItemStateOnCard
               if action.data["checkItem"]["state"] == 'complete'
-                "#{action.member_creator.full_name} checked off \"#{ action.data['checkItem']['name']}\" on #{card_link}"
+                "checked off <strong>\"#{ action.data['checkItem']['name']}\"</strong> on #{card_link}"
               else
-                "#{action.member_creator.full_name} unchecked \"#{action.data['checkItem']['name']}\" on #{card_link}"
+                "unchecked <strong>\"#{action.data['checkItem']['name']}\"</strong> on #{card_link}"
               end
 
             when :commentCard
-              "#{action.member_creator.full_name} commented on #{card_link}: #{action.data['text']}"
+              "commented on #{card_link}:<br/> <em>#{action.data['text']}</em>"
 
             when :deleteCard
-              "#{action.member_creator.full_name} deleted card ##{action.data['card']['idShort']}"
+              "deleted card <strong>##{action.data['card']['idShort']}</strong>"
 
             # when :addChecklistToCard
             #   "#{action.member_creator.full_name} added the checklist \"#{action.data['checklist']['name']}\" to #{card_link}"
@@ -79,13 +81,16 @@ class Bot
             #   "#{action.member_creator.full_name} removed the checklist \"#{action.data['checklist']['name']}\" from #{card_link}"
 
             else
-              STDERR.puts action.inspect
               ""
             end
 
             if dedupe.new? message
-              puts "Sending: #{message}"
-              hipchat_room.send('Trello', message, :color => :purple)
+              if message.present?
+                member_avatar = "<img src='https://trello-avatars.s3.amazonaws.com/#{action.member_creator.avatar_hash}/30.png' />"
+                member_name = "<strong>#{action.member_creator.full_name}</strong>"
+                message = "#{member_avatar} #{member_name} #{message}"
+                hipchat_room.send('Trello', message, :color => :green, :notify => true)
+              end
             else
               puts "Supressing duplicate message: #{message}"
             end
