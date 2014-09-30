@@ -86,7 +86,7 @@ class Bot
 
             if dedupe.new? message
               if message.present?
-                member_avatar = "<img src='https://trello-avatars.s3.amazonaws.com/#{action.member_creator.avatar_id}/30.png' />"
+                member_avatar = "<img width='16' height='16' 'src='https://trello-avatars.s3.amazonaws.com/#{action.member_creator.avatar_id}/16.png' />"
                 member_name = "<strong>#{action.member_creator.full_name}</strong>"
                 message = "#{member_avatar} #{member_name} #{message}"
                 hipchat_room.send('Trello', message, :color => :green, :notify => true)
